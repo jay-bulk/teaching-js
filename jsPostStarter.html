@@ -1,0 +1,130 @@
+<!doctype html>
+<!--Author: Rhett Bulkley -->
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Post a Review</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+            crossorigin="anonymous"
+        />
+        <style>
+            body {
+                font-size: large;
+                width: 75%;
+                margin: 10px auto;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container" style="padding: 30px">
+            <div class="row justify-content-center" style="margin: 30px">
+                <div class="col-md-5">
+                    <h1>Create Review</h1>
+                    <br />
+                    <form id="review-form">
+                        <div class="form-group">
+                            <label for="filmselect">Movie</label>
+                            <select
+                                class="form-control"
+                                required
+                                id="filmselect"
+                            >
+                                <option></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ratinginput">Rating</label>
+                            <input
+                                type="number"
+                                class="form-control"
+                                name="rating"
+                                min="1"
+                                max="10"
+                                required
+                                id="ratinginput"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="summaryinput">Summary Review</label>
+                            <textarea
+                                row="3"
+                                class="form-control"
+                                name="summary"
+                                required
+                                id="summaryinput"
+                            ></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Add Review
+                        </button>
+                        <p id="post-result"></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script type="text/javascript">
+        fetch("https://cisweb.biz.colostate.edu/leov/php/rwapi/getFilms.php")
+            .then((response) => response.json())
+            .then((json) => {
+                json.forEach((film) => {
+                    document.getElementById("filmselect").innerHTML +=
+                        `<option value="${film.filmpk}">${film.movietitle}</option>`;
+                });
+            })
+            .catch(() => {
+                document.getElementById("review-form").innerHTML =
+                    `<p>Page unavailable, try again later</p>`;
+            });
+        document.getElementById("review-form").onsubmit = submitReview;
+        function submitReview(event) {
+            event.preventDefault();
+            let rating = document.getElementById("ratinginput").value;
+            let summary = document.getElementById("summaryinput").value;
+
+            let filmDropDown = document.getElementById("filmselect");
+            let filmPk = filmDropDown.options[filmDropDown.selectedIndex].value;
+
+            console.log(filmPk + rating + summary);
+
+            fetch(
+                "https://cisweb.biz.colostate.edu/leov/php/rwapi/postreview.php",
+                {
+                    method: "POST",
+                    headers: { "content-Type": "application/json" },
+                    body: JSON.stringify({
+                        filmFK: filmPk,
+                        rating,
+                        summary,
+                    }),
+                },
+            )
+                .then((response) => {
+                    if (response.status === 201) {
+                        document.getElementById("post-result").className =
+                            "text-success";
+                        document.getElementById("post-result").innerHTML =
+                            "Review Added";
+                    } else if (response.status > 400 && response.status < 500) {
+                        document.getElementById("post-result").className =
+                            "text-danger";
+                        document.getElementById("post-result").innerHTML =
+                            "Add Review Failed";
+                    } else {
+                        throw new Error();
+                    }
+                })
+                .catch(() => {
+                    document.getElementById("post-result").className =
+                        "text-danger";
+                    document.getElementById("post-result").innerHTML =
+                        "Review failed, try again later";
+                });
+        }
+    </script>
+</html>
