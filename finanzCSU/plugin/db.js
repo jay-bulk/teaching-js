@@ -1,16 +1,24 @@
 import fp from "fastify-plugin";
-import sql from "mssql";
+import sql from 'mssql'
 
-export class DBProvider {
-  dbConfig = {}
+const defaults = {
+  server: 'localhost',
+  port: 1433,
+  user: 'sa',
+  password: '',
+  database: '',
+  trustCertificate: true
+}
+
+class DBProvider {
   pool
   db
   constructor(configOptions) {
     this.dbConfig = {
-      user: configOptions?.user ?? '',
-      password: configOptions?.password ?? '',
-      server: configOptions?.server ?? '',
-      database: configOptions?.database ?? '',
+      user: configOptions?.user ?? defaults.user,
+      password: configOptions?.password ?? defaults.password,
+      server: configOptions?.server ?? defaults.server,
+      database: configOptions?.database ?? defaults.database,
       trustServerCertificate: true
     };
   }
@@ -26,23 +34,25 @@ export class DBProvider {
   }
 }
 
-export default fp(
-  async (
-    fastify,
-    {
-      db = new DBProvider({
-        user: process.env.DB_USER ?? '',
-        password: process.env.DB_PASSWORD ?? '',
-        server: process.env.DB_HOST ?? '',
-        database: process.env.DB_SCHEMA ?? ''
-      }),
-    },
-  ) => {
-    await db.init();
-    fastify.decorateRequest("db", null);
-    await fastify.addHook("preSerialization", (req, reply, done) => {
-      req.db = this.db;
-      done();
-    });
-  },
-);
+async function plugin(fastify, opts) {
+  const db = new DBProvider({
+    user: process.env.DB_USER ?? opts.user,
+    password: process.env.DB_PASSWORD ?? opts.password,
+    server: process.env.DB_HOST ?? opts.server,
+    database: process.env.DB_SCHEMA ?? opts.database
+  })
+  await db.init();
+  fastify.addHook('onClose', async () => {
+    await this.pool.close()
+  })
+  fastify.decorateRequest('db', null);
+  await fastify.addHook('preSerialization', (req, reply, done) => {
+    req.db = db;
+    done();
+  });
+}
+
+export default fp(plugin, {
+  fastify: '4.x',
+  name: 'mssql'
+});

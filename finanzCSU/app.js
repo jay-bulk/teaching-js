@@ -13,7 +13,7 @@ export async function app() {
   });
   await fastify.register(db);
   //await fastify.register(auth);
-  app.register(autoload, {
+  fastify.register(autoload, {
     dir: join(__dirname, 'routes')
   })
 
