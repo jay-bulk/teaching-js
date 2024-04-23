@@ -1,3 +1,4 @@
+// Author: Rhett Bulkley
 var myQuotes = [
   {
     quote: "Frankly, my dear, I don't give a damn.",
