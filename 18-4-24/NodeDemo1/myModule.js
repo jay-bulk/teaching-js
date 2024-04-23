@@ -1,3 +1,4 @@
-export function sayHello(){
-    return "Hello!"
+//Author: Rhett Bulkley
+export function sayHello() {
+  return "Hello!";
 }
