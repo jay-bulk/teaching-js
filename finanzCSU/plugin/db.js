@@ -1,24 +1,23 @@
 import fp from "fastify-plugin";
-import { DBProvider } from "../util/db";
 import sql from "mssql";
 
 export class DBProvider {
-  configOptions = {
-    dbConfig,
-    pool,
-    db,
-  };
+  dbConfig = {}
+  pool
+  db
   constructor(configOptions) {
     this.dbConfig = {
-      user: configOptions?.user ?? process.env.SQLUSER,
-      password: configOptions?.password ?? process.env.SQLPASSWORD,
-      connectString: configOptions?.connectString ?? process.env.DATABASE_URL,
+      user: configOptions?.user ?? '',
+      password: configOptions?.password ?? '',
+      server: configOptions?.server ?? '',
+      database: configOptions?.database ?? '',
+      trustServerCertificate: true
     };
   }
 
   async init() {
     try {
-      this.pool = sql.ConnectionPool(this.dbConfig);
+      this.pool = new sql.ConnectionPool(this.dbConfig);
       this.db = this.pool.connect();
     } catch (e) {
       console.error(e);
@@ -32,16 +31,17 @@ export default fp(
     fastify,
     {
       db = new DBProvider({
-        user: "test",
-        password: "test",
-        connectString: "localhost",
+        user: process.env.DB_USER ?? '',
+        password: process.env.DB_PASSWORD ?? '',
+        server: process.env.DB_HOST ?? '',
+        database: process.env.DB_SCHEMA ?? ''
       }),
     },
   ) => {
     await db.init();
     fastify.decorateRequest("db", null);
     await fastify.addHook("preSerialization", (req, reply, done) => {
-      req.db = db;
+      req.db = this.db;
       done();
     });
   },

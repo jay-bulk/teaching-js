@@ -3,14 +3,18 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test test/*.js",
     "dev": "node --env-file=.env index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "fastify": "^4.26.2"
+    "@fastify/autoload": "^5.8.0",
+    "fastify": "^4.26.2",
+    "fastify-plugin": "^4.5.1",
+    "mssql": "^10.0.2"
   }
 }
