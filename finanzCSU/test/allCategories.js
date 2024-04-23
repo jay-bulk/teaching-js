@@ -5,10 +5,10 @@ import assert from 'node:assert'
 describe('category tests', async () => {
   const fastify = await app()
   before(async () =>
-  fastify.listen({
-    host: '0.0.0.0',
-    post: '1343'
-  })
+    fastify.listen({
+      host: '0.0.0.0',
+      post: '1343'
+    })
   )
 
   after(async () => {
@@ -23,5 +23,3 @@ describe('category tests', async () => {
     assert(res.body, {}, 'Missing Categories')
   })
 })
-
-

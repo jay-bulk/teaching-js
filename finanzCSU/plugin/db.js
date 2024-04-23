@@ -1,4 +1,4 @@
-import fp from "fastify-plugin";
+import fastifyPlugin from 'fastify-plugin'
 import sql from 'mssql'
 
 const defaults = {
@@ -7,52 +7,51 @@ const defaults = {
   user: 'sa',
   password: '',
   database: '',
-  trustCertificate: true
+  trustServerCertificate: true
 }
 
 class DBProvider {
+  dbConfig
   pool
-  db
-  constructor(configOptions) {
+  constructor (configOptions) {
     this.dbConfig = {
       user: configOptions?.user ?? defaults.user,
       password: configOptions?.password ?? defaults.password,
       server: configOptions?.server ?? defaults.server,
       database: configOptions?.database ?? defaults.database,
-      trustServerCertificate: true
-    };
+      options: {
+        trustServerCertificate: true
+      }
+    }
   }
 
-  async init() {
-    try {
-      this.pool = new sql.ConnectionPool(this.dbConfig);
-      this.db = this.pool.connect();
-    } catch (e) {
-      console.error(e);
-      await this.db?.dispose();
-    }
+  async initdB () {
+    const conn = new sql.ConnectionPool(this.dbConfig).connect()
+      .then(async (pool) => {
+        await pool.query('SELECT 1')
+        this.pool = pool
+      })
+      .catch((err) => {
+        console.error(err)
+      })
   }
 }
 
-async function plugin(fastify, opts) {
+export default fastifyPlugin(async (fastify, opts) => {
   const db = new DBProvider({
     user: process.env.DB_USER ?? opts.user,
     password: process.env.DB_PASSWORD ?? opts.password,
     server: process.env.DB_HOST ?? opts.server,
     database: process.env.DB_SCHEMA ?? opts.database
   })
-  await db.init();
+  fastify.addHook('onReady', async () => {
+    await db.initdB()
+  })
   fastify.addHook('onClose', async () => {
     await this.pool.close()
   })
-  fastify.decorateRequest('db', null);
-  await fastify.addHook('preSerialization', (req, reply, done) => {
-    req.db = db;
-    done();
-  });
-}
-
-export default fp(plugin, {
-  fastify: '4.x',
-  name: 'mssql'
-});
+  fastify.decorateRequest('pool', null)
+  fastify.addHook('preHandler', (request) => {
+    request.pool = db.pool.connect()
+  })
+})

@@ -1,21 +1,24 @@
-import Fastify from "fastify";
-import db from "./plugin/db.js";
-import autoload from '@fastify/autoload'
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
+import Fastify from 'fastify'
+import db from './plugin/db.js'
+import fastifyPrintRoutes from 'fastify-print-routes'
+import autoLoad from '@fastify/autoload'
+import * as path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(filename)
 
 export async function app() {
-  let fastify = Fastify({
-    logger: true,
-  });
-  await fastify.register(db);
-  //await fastify.register(auth);
-  fastify.register(autoload, {
-    dir: join(__dirname, 'routes')
+  const fastify = Fastify({
+    logger: true
   })
 
-  return fastify;
+  await fastify.register(fastifyPrintRoutes)
+  await fastify.register(db)
+
+  fastify.register(autoLoad, {
+    dir: path.join(__dirname, 'routes')
+  })
+
+  return fastify
 }
