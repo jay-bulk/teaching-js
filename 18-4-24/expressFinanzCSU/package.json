@@ -1,0 +1,19 @@
+{
+  "name": "expFinanzCSU",
+  "author": "Rhett Bulkley",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file=.env index.js"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "@biomejs/biome": "^1.7.0",
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "mssql": "^10.0.2"
+  }
+}
