@@ -5,5 +5,3 @@ export function sayHello (name) {
 export function addTwoNumbers (num1, num2) {
   return num1 + num2
 }
-
-export default sayHello
