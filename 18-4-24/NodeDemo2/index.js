@@ -113,7 +113,7 @@ app.post('/login', async (req, res) => {
 
   const token = jwt.sign({pk: contact.ContactPK}, process.env.JWT_PRIVATE_KEY, {expiresIn: '30 minutes'})
 
-  let setTokenQuery = `UPDATE contact
+  const setTokenQuery = `UPDATE contact
                         SET token = '${token}' WHERE ContactPK = '${contact.ContactPK}'`
 
   try {
