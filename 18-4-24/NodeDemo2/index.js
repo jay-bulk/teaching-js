@@ -3,6 +3,7 @@ import express from 'express'
 import { execQuery } from './dbConnExec.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { auth } from './middleware/authenticate.js'
  
 const app = express()
 
@@ -13,14 +14,17 @@ app.listen(PORT, () => {
 }) 
 
 app.get('/', (req, res) => {
+  console.log('GET /', req.headers)
   res.send('Look ma, I can do Node Rest API')
 })
 
 app.get('/pa', (req, res) => {
+  console.log('GET /pa', req.headers)
   res.send('Look pa, I am an ace with Node Rest API')
 })
 
 app.get('/films', (req, res) => {
+  console.log('GET /films', req.headers)
   const query = `select filmpk, MovieTitle, PitchText, AmountBudgeted,
                       summary, DateInTheaters, rating
                       from film inner join FilmRating
@@ -37,6 +41,7 @@ app.get('/films', (req, res) => {
 })
 
 app.get('/films/:id', (req, res) => {
+  console.log('GET /films/:id', req.headers)
   if (req.params.id.match(/^-?\d+$/)) {
   const query = `select filmpk, MovieTitle, PitchText, AmountBudgeted,
                       summary, DateInTheaters, rating
@@ -61,6 +66,7 @@ app.get('/films/:id', (req, res) => {
 })
 
 app.post('/register', async (req, res) => {
+  console.log('POST /register', req.headers)
   let firstName = req.body.firstName
   let lastName = req.body.lastName
   const email = req.body.email
@@ -93,6 +99,7 @@ app.post('/register', async (req, res) => {
 
 app.post('/login', async (req, res) => {
 
+  console.log('POST /login', req.headers)
   const email = req.body.email
   const userPassword = req.body.userPassword
   const emailCheckQuery = `Select * FROM contact where email = '${email}'`
@@ -132,4 +139,31 @@ app.post('/login', async (req, res) => {
     console.error(err, 'Failed to get token')
     res.status(500).send()
   }
+})
+
+app.post('/reviews/add', auth, async (req, res) => {
+  console.log('POST reviews/add', req.headers)
+  try {
+    const filmFK = req.body.filmFK
+    let summary = req.body.summary
+    const rating = req.body.rating
+
+    if (!filmFK || !summary || !rating || !Number.isInteger(rating)) {
+      res.status(400).send('Bad Request')
+    }
+
+    summary = summary.replace("'", "''")
+
+    const insertReview = `Insert into FilmReview(reviewsummary, reviewrating, filmFK, contactFK)
+                        Output inserted.ReviewPK, inserted.ReviewSummary, inserted.ReviewRating, inserted.FilmFK
+                        VALUES ('${summary}', ${rating}, ${filmFK},${req.contact.ContactPK})`
+    const data = await execQuery(insertReview)
+    res.status(201).send(data[0])
+  } catch (err) {
+    console.log('Error in POST /reviews/add', err)
+    res.status(500).send('Internal Server Error')
+  }
+
+
+
 })
