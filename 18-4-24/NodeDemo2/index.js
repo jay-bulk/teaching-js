@@ -160,10 +160,23 @@ app.post('/reviews/add', auth, async (req, res) => {
     const data = await execQuery(insertReview)
     res.status(201).send(data[0])
   } catch (err) {
-    console.log('Error in POST /reviews/add', err)
+    console.error('Error in POST /reviews/add', err)
     res.status(500).send('Internal Server Error')
   }
+})
 
-
+app.post('/logout', auth, async (req, res) => {
+  console.log('POST /logout', req.headers)
+  const updateContact = `Update contact
+                          Set token=NULL
+                          WHERE contactPK = ${req.contact.ContactPK}`
+  await execQuery(updateContact)
+  .then(() => {
+    res.status(201).send('Signed Out')
+  })
+  .catch(err => {
+    console.error('Error in POST /logout', err)
+    res.status(500).send('You are still logged in')
+  })
 
 })

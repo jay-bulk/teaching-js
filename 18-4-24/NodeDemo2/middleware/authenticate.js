@@ -1,3 +1,4 @@
+// Author: Rhett Bulkley
 import jwt from 'jsonwebtoken'
 import { execQuery } from '../dbConnExec.js'
 
