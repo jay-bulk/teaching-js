@@ -10,10 +10,12 @@ app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`)
 }) 
 
+/** Server alive function */
 app.get('/health', (req, res) => {
   res.status(200).send({status: ok})
 })
 
+/** Get all transactions */
 app.get('/transactions', (req, res) => {
   const query = `select Transactions.TransactionID, Transactions.MonthID, 
                     Transactions.UserBudgetID, Transactions.CategoryID, 
@@ -33,6 +35,7 @@ app.get('/transactions', (req, res) => {
   })
 })
 
+/** Get all transactions for a given monthId */
 app.get('/transactions/:month_id', (req, res) => {
   if (req.params.month_id.match(/^-?\d+$/)) {
   const query = `select Transactions.TransactionID, Transactions.MonthID, 
@@ -61,6 +64,7 @@ app.get('/transactions/:month_id', (req, res) => {
   }
 })
 
+/** Register a new user */
 app.post('/register', async (req, res) => {
   let fullName = req.body.fullName
   let uName = req.body.uName
@@ -94,6 +98,7 @@ app.post('/register', async (req, res) => {
   })
 })
 
+/** Authenticate a user and generate/return a token */
 app.post('/login', async (req, res) => {
 
   const uName = req.body.uName
@@ -124,7 +129,7 @@ app.post('/login', async (req, res) => {
 
     res.status(200).send({
       'jwt-assertion': token,
-      contact: {
+      UserInfo: {
           'Full Name': user.FullName,
         Username: user.UName,
         UserID: user.UserID
@@ -134,4 +139,44 @@ app.post('/login', async (req, res) => {
     console.error(err, 'Failed to get token')
     res.status(500).send()
   }
+})
+
+/** Log a user out by nullifying their JWT */
+app.post('/logout', auth, async (req, res) => {
+  const logoutUser = `Update NodeLoginInfo Set token=NULL WHERE UserId = ${req.user.UserID}`
+  await execQuery(logoutUser)
+  .then(() => {
+    res.status(201).send('Successfully Logged Out')
+  })
+  .catch(err => {
+    console.error(err, 'Failed to logout')
+    res.status(500).send('Logout Failed. Try again later')
+  })
+})
+
+/** Add transaction item for a users budget */
+app.post('/transactions/add', auth, async (req, res) => {
+  try {
+    const monthId = req.body.monthId
+    const userBudgetId = req.body.userBudgetId
+    const categoryId = req.body.categoryId
+    const amount = req.body.transactionAmount
+    let memo = req.body.memo ?? ''
+
+    /** Check for required params */
+    if (!monthId || !userBudgetId || !categoryId || !amount){
+      res.status(400).send('Bad Request')
+    }
+
+    memo = memo.replace("'", "''")
+
+    const addTransaction = `Insert into Transacations(monthid, userbudgetid, categoryid, transactionamount, memo)
+                            Output inserted.TransactionID, inserted.TransactionAMount, inserted.Memo
+                            VALUES (${monthId}, ${userBudgetId}, ${categoryId}, ${amount}, ${memo})`
+    const data = await execQuery(addTransaction)
+    res.status(201).send(data[0])
+ } catch (err) {
+  console.error(err, 'Error adding transaction')
+  res.status(500).send('Internal Server Error')
+ }
 })
