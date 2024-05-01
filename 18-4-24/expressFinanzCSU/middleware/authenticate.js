@@ -5,11 +5,11 @@ import { execQuery } from '../dbConnExec.js'
 const privateKey = process.env.JWT_PRIVATE_KEY
 
 export const auth = async (req, res, next) => {
-    console.log('GET AUTH', req.header('Authorization'))
+    // console.log('GET AUTH', req.header('Authorization'))
     try {
         const token = req.header('Authorization').replace('Bearer ', '')
         const decodedJWT = jwt.verify(token, privateKey)
-        const userPk = decodedJWT.pk
+        const userId = decodedJWT.pk
         const checkTokenQuery = `Select UserID, UName, FullName
                                     FROM NodeLoginInfo 
                                     WHERE UserID = ${userId} and token = '${token}'`
